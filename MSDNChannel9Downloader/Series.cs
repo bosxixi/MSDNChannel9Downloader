@@ -8,7 +8,7 @@ using HtmlAgilityPack;
 namespace MSDNChannel9Downloader
 {
 
-    class Series
+    public class Series
     {
         public Series(string seriesLink, HttpClient httpClient)
         {
@@ -20,17 +20,23 @@ namespace MSDNChannel9Downloader
             {
                 throw new ArgumentNullException(nameof(seriesLink));
             }
+
+            Console.WriteLine("Starting...");
+
+            HtmlDocuments = new List<HtmlDocument>();
             SeriesLink = seriesLink;
             _httpClient = httpClient;
-            PageCount = getMaxPageNumber();
+            PageCount = getMaxPageNumber(SeriesLink);
+            Console.WriteLine($"This Series has {PageCount} pages.");
         }
         public string SeriesLink { get; set; }
 
         public readonly HttpClient _httpClient;
+        public string pageParmName { get; set; } = "page";
 
-        public async Task<IEnumerable<VideoLink>> GetVideoLinksAsync()
+        public async Task<IEnumerable<VideoPageLink>> GetVideoLinksAsync()
         {
-            List<VideoLink> videoLinks = new List<VideoLink>();
+            List<VideoPageLink> videoLinks = new List<VideoPageLink>();
             if (!HtmlDocuments?.Any() ?? true)
             {
                 await LoadHtmlDocumentsAsync();
@@ -47,8 +53,8 @@ namespace MSDNChannel9Downloader
 
         public int PageCount { get; private set; }
 
-        private async Task<string> GetHtmlByPageNumerAsync(int page) =>
-            await _httpClient.GetStringAsync($"https://channel9.msdn.com/Series/aspnetmonsters?page={page}");
+        private async Task<string> GetHtmlByPageNumerAsync(string pageParmName, int page) =>
+            await _httpClient.GetStringAsync($"{SeriesLink}?{pageParmName}={page}");
 
         private async Task LoadHtmlDocumentsAsync()
         {
@@ -60,24 +66,24 @@ namespace MSDNChannel9Downloader
             }
         }
 
-        public IEnumerable<VideoLink> getPageVideos(HtmlDocument htmlDocument)
+        public IEnumerable<VideoPageLink> getPageVideos(HtmlDocument htmlDocument)
         {
             return htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.entries li a.title").Select(c =>
-            new VideoLink
+            new VideoPageLink
             {
                 Title = c.InnerText.Replace("&#160;", " "),
                 Url = c.Attributes["href"].Value
             });
         }
 
-        static int getMaxPageNumber()
+        public static int getMaxPageNumber(string url)
         {
             HtmlWeb web = new HtmlWeb();
-            HtmlDocument htmlDocument = web.Load("https://channel9.msdn.com/Series/aspnetmonsters");
+            HtmlDocument htmlDocument = web.Load(url);
             var pager = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.paging li a");
             if (!pager.Any())
             {
-                return 0;
+                return 1;
             }
 
             return int.Parse(pager.Last(c => c.InnerText.IsNumeric()).InnerText);
@@ -88,7 +94,7 @@ namespace MSDNChannel9Downloader
             List<string> htmls = new List<string>();
             for (int i = 1; i <= PageCount; i++)
             {
-                htmls.Add(await GetHtmlByPageNumerAsync(i));
+                htmls.Add(await GetHtmlByPageNumerAsync(pageParmName, i));
                 Console.WriteLine($"Page {i} downloaded");
             }
             return htmls;

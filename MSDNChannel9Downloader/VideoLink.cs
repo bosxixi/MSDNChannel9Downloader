@@ -2,7 +2,7 @@
 
 namespace MSDNChannel9Downloader
 {
-    public class VideoLink
+    public class VideoPageLink
     {
         public string Url { get; set; }
 

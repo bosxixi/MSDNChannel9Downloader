@@ -14,15 +14,20 @@ namespace MSDNChannel9Downloader
     {
         static void Main(string[] args)
         {
-        
+            MainAsync().Wait();
+            Console.ReadLine();
         }
 
 
         static async Task MainAsync()
         {
-            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters", new HttpClient());
+            var client = new HttpClient();
+            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters", client);
             var videoLinks = await series.GetVideoLinksAsync();
-
+            foreach (var item in videoLinks)
+            {
+                item.Print();
+            }
         }
       
 
