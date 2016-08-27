@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using HtmlAgilityPack;
 using HapCss;
+using Newtonsoft.Json;
 
 namespace MSDNChannel9Downloader
 {
@@ -22,12 +23,14 @@ namespace MSDNChannel9Downloader
         static async Task MainAsync()
         {
             var client = new HttpClient();
-            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters", client);
+            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters?page=1", client);
             var videoLinks = await series.GetVideoLinksAsync();
             foreach (var item in videoLinks)
             {
                 item.Print();
+                item.LoadMediaFileInfos();
             }
+            series.SaveTo();
         }
       
 

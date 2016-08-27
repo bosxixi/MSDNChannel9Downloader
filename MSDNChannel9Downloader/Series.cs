@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
 
 namespace MSDNChannel9Downloader
 {
@@ -20,15 +21,19 @@ namespace MSDNChannel9Downloader
             {
                 throw new ArgumentNullException(nameof(seriesLink));
             }
-
+            Uri uri = new Uri(seriesLink);
+            Name = uri.AbsolutePath.Split('/')[2];
             Console.WriteLine("Starting...");
 
             HtmlDocuments = new List<HtmlDocument>();
             SeriesLink = seriesLink;
+         
+            
             _httpClient = httpClient;
             PageCount = getMaxPageNumber(SeriesLink);
             Console.WriteLine($"This Series has {PageCount} pages.");
         }
+        public string Name { get; set; }
         public string SeriesLink { get; set; }
 
         public readonly HttpClient _httpClient;
@@ -68,11 +73,12 @@ namespace MSDNChannel9Downloader
 
         public IEnumerable<VideoPage> getPageVideos(HtmlDocument htmlDocument)
         {
+            Uri uri = new Uri(SeriesLink);
             return htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.entries li a.title").Select(c =>
             new VideoPage
             {
                 Title = c.InnerText.Replace("&#160;", " "),
-                Url = c.Attributes["href"].Value
+                Url = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
             });
         }
 
@@ -98,6 +104,18 @@ namespace MSDNChannel9Downloader
                 Console.WriteLine($"Page {i} downloaded");
             }
             return htmls;
+        }
+
+        public void SaveTo(string path = null)
+        {
+            if (String.IsNullOrEmpty(path))
+            {
+                path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}.json";
+            }
+         
+            string json = JsonConvert.SerializeObject(this);
+           
+            System.IO.File.WriteAllText(path, json);
         }
     }
 }
