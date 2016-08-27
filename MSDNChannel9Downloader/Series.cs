@@ -32,8 +32,8 @@ namespace MSDNChannel9Downloader
 
             HtmlDocuments = new List<HtmlDocument>();
             SeriesLink = seriesLink;
-         
-            
+
+
             _httpClient = httpClient;
             PageCount = getMaxPageNumber(SeriesLink);
             Console.WriteLine($"This Series has {PageCount} pages.");
@@ -41,12 +41,24 @@ namespace MSDNChannel9Downloader
         public string Name { get; set; }
         public string SeriesLink { get; set; }
 
+        [JsonIgnore]
         public readonly HttpClient _httpClient;
+
+
         public string pageParmName { get; set; } = "page";
 
-        public async Task<IEnumerable<VideoPage>> GetVideoLinksAsync()
+        [JsonIgnore]
+        public readonly ICollection<HtmlDocument> HtmlDocuments;
+
+        public int PageCount { get; private set; }
+
+        public List<VideoPage> VideoPages { get; set; }
+        public async Task LoadVideoPages()
         {
-            List<VideoPage> videoLinks = new List<VideoPage>();
+            if (VideoPages == null)
+            {
+                VideoPages = new List<VideoPage>();
+            }
             if (!HtmlDocuments?.Any() ?? true)
             {
                 await LoadHtmlDocumentsAsync();
@@ -54,14 +66,10 @@ namespace MSDNChannel9Downloader
             foreach (var item in HtmlDocuments)
             {
                 var pageVideoLinks = getPageVideos(item);
-                videoLinks.AddRange(pageVideoLinks);
+                VideoPages.AddRange(pageVideoLinks);
             }
-            return videoLinks;
         }
 
-        public readonly ICollection<HtmlDocument> HtmlDocuments;
-
-        public int PageCount { get; private set; }
 
         private async Task<string> GetHtmlByPageNumerAsync(string pageParmName, int page) =>
             await _httpClient.GetStringAsync($"{SeriesLink}?{pageParmName}={page}");
@@ -117,7 +125,7 @@ namespace MSDNChannel9Downloader
             {
                 path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}.json";
             }
-         
+
             string json = JsonConvert.SerializeObject(this);
 
             if (File.Exists(path))

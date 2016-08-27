@@ -45,13 +45,35 @@ namespace MSDNChannel9Downloader
                 }
                 BestQuality.Print();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("//-------------------------Exception");
-                Console.WriteLine($"Title: {Title}");
-                Console.WriteLine($"Url: {Url}");
-                Console.WriteLine(ex.Message);
-                Console.WriteLine("//-------------------------Exception End");
+                try
+                {
+                    HtmlWeb web = new HtmlWeb();
+                    HtmlDocument htmlDocument = web.Load(Url);
+                    var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
+
+                    foreach (var li in lis)
+                    {
+                        var file = new MediaFileInfo()
+                        {
+                            FileUri = GetMediaFileUri(li),
+                            FileSize = GetMediaFileSize(li),
+                            Type = GetMediaFileType(li)
+                        };
+
+                        MediaFileInfos.Add(file);
+                    }
+                    BestQuality.Print();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("//-------------------------Exception");
+                    Console.WriteLine($"Title: {Title}");
+                    Console.WriteLine($"Url: {Url}");
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("//-------------------------Exception End");
+                }
             }
            
         }

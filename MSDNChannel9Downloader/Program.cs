@@ -24,13 +24,14 @@ namespace MSDNChannel9Downloader
         {
             var client = new HttpClient();
             Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters", client);
-            var videoLinks = await series.GetVideoLinksAsync();
+            await series.LoadVideoPages();
 
-            foreach (var item in videoLinks)
+            foreach (var item in series.VideoPages)
             {
                 item.Print();
                 item.LoadMediaFileInfos();
             }
+
             series.SaveTo();
         }
       
