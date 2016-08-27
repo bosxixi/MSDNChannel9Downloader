@@ -34,9 +34,9 @@ namespace MSDNChannel9Downloader
         public readonly HttpClient _httpClient;
         public string pageParmName { get; set; } = "page";
 
-        public async Task<IEnumerable<VideoPageLink>> GetVideoLinksAsync()
+        public async Task<IEnumerable<VideoPage>> GetVideoLinksAsync()
         {
-            List<VideoPageLink> videoLinks = new List<VideoPageLink>();
+            List<VideoPage> videoLinks = new List<VideoPage>();
             if (!HtmlDocuments?.Any() ?? true)
             {
                 await LoadHtmlDocumentsAsync();
@@ -66,10 +66,10 @@ namespace MSDNChannel9Downloader
             }
         }
 
-        public IEnumerable<VideoPageLink> getPageVideos(HtmlDocument htmlDocument)
+        public IEnumerable<VideoPage> getPageVideos(HtmlDocument htmlDocument)
         {
             return htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.entries li a.title").Select(c =>
-            new VideoPageLink
+            new VideoPage
             {
                 Title = c.InnerText.Replace("&#160;", " "),
                 Url = c.Attributes["href"].Value
