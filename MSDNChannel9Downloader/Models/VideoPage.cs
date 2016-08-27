@@ -42,8 +42,8 @@ namespace MSDNChannel9Downloader
                     };
 
                     MediaFileInfos.Add(file);
-                    file.Print();
                 }
+                BestQuality.Print();
             }
             catch (Exception ex)
             {

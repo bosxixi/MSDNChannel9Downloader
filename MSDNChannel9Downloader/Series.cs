@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace MSDNChannel9Downloader
 {
@@ -16,6 +17,10 @@ namespace MSDNChannel9Downloader
             if (String.IsNullOrEmpty(seriesLink))
             {
                 throw new ArgumentNullException(nameof(seriesLink));
+            }
+            if (seriesLink.Contains("?"))
+            {
+                throw new ArgumentException("can not contain paramater.");
             }
             if (httpClient == null)
             {
@@ -114,8 +119,13 @@ namespace MSDNChannel9Downloader
             }
          
             string json = JsonConvert.SerializeObject(this);
-           
-            System.IO.File.WriteAllText(path, json);
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            File.WriteAllText(path, json);
         }
     }
 }

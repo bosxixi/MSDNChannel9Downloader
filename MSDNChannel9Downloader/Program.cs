@@ -23,8 +23,9 @@ namespace MSDNChannel9Downloader
         static async Task MainAsync()
         {
             var client = new HttpClient();
-            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters?page=1", client);
+            Series series = new Series("https://channel9.msdn.com/Series/aspnetmonsters", client);
             var videoLinks = await series.GetVideoLinksAsync();
+
             foreach (var item in videoLinks)
             {
                 item.Print();
