@@ -1,7 +1,10 @@
 ﻿using HtmlAgilityPack;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -10,26 +13,33 @@ namespace MSDNChannel9Downloader
     public class VideoPage
     {
         public string Url { get; set; }
-
         public string Title { get; set; }
 
-        public ICollection<MediaFileInfo> MediaFileInfos { get; set; } = new List<MediaFileInfo>();
+        private static object syncRoot = new Object();
+
+        public List<MediaFileInfo> MediaFileInfos { get; set; }
 
         public MediaFileInfo BestQuality
         {
             get
             {
+                if (!MediaFileInfos?.Any() ?? true)
+                {
+                    return null;
+                }
                 int max = MediaFileInfos.Select(c => (int)c.Type).Max();
                 return MediaFileInfos.FirstOrDefault(c => c.Type == (MediaFileType)max);
             }
         }
-
         public void LoadMediaFileInfos()
         {
             try
             {
-                HtmlWeb web = new HtmlWeb();
-                HtmlDocument htmlDocument = web.Load(Url);
+                MediaFileInfos = MediaFileInfos ?? new List<MediaFileInfo>();
+                WebClient client = new WebClient();
+                string htmlString = client.DownloadString(Url);
+                var htmlDocument = new HtmlDocument();
+                htmlDocument.LoadHtml(htmlString);
                 var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
 
                 foreach (var li in lis)
@@ -40,43 +50,26 @@ namespace MSDNChannel9Downloader
                         FileSize = GetMediaFileSize(li),
                         Type = GetMediaFileType(li)
                     };
-
-                    MediaFileInfos.Add(file);
-                }
-                BestQuality.Print();
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    HtmlWeb web = new HtmlWeb();
-                    HtmlDocument htmlDocument = web.Load(Url);
-                    var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
-
-                    foreach (var li in lis)
+                    lock (syncRoot)
                     {
-                        var file = new MediaFileInfo()
-                        {
-                            FileUri = GetMediaFileUri(li),
-                            FileSize = GetMediaFileSize(li),
-                            Type = GetMediaFileType(li)
-                        };
-
                         MediaFileInfos.Add(file);
                     }
-                    BestQuality.Print();
+            
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("//-------------------------Exception");
-                    Console.WriteLine($"Title: {Title}");
-                    Console.WriteLine($"Url: {Url}");
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine("//-------------------------Exception End");
-                }
+                BestQuality?.Print();
             }
-           
+            catch (Exception ex)
+            {
+
+                Console.WriteLine("//-------------------------Exception");
+                Console.WriteLine($"Title: {Title}");
+                Console.WriteLine($"Url: {Url}");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("//-------------------------Exception End");
+
+            }
         }
+       
         private string GetMediaFileUri(HtmlNode node)
         {
             return node.QuerySelectorAll("a").Single().Attributes["href"].Value;
