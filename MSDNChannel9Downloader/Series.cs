@@ -126,7 +126,7 @@ namespace MSDNChannel9Downloader
                 path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}.json";
             }
 
-            string json = JsonConvert.SerializeObject(this.VideoPages);
+            string json = JsonConvert.SerializeObject(this.VideoPages, Formatting.Indented);
 
             if (File.Exists(path))
             {

@@ -17,12 +17,12 @@ namespace MSDNChannel9Downloader
     {
         static void Main(string[] args)
         {
-            var client = new HttpClient();
-            Series series = new Series("https://channel9.msdn.com/Tags/fsharp", client);
-            Task task = LoadVideoPagesToDiskAsync(series);
-            task.Wait();
-            series.SaveTo();
-            Console.WriteLine("File Saved!");
+            //var client = new HttpClient();
+            //Series series = new Series("https://channel9.msdn.com/Tags/asp.net", client);
+            //Task task = LoadVideoPagesToDiskAsync(series);
+            //task.Wait();
+            //series.SaveTo();
+            //Console.WriteLine("File Saved!");
 
             //var vps = GetVideoPagesFromDisk();
             //foreach (var item in vps)
@@ -31,9 +31,24 @@ namespace MSDNChannel9Downloader
             //    {
             //        Console.WriteLine(item.BestQuality.FileUri);
             //    }
-
             //}
             Console.ReadLine();
+        }
+
+        static async Task DownloadFile(string fileName, string path, string uri)
+        {
+            using (var client = new WebClient())
+            {
+                client.DownloadProgressChanged += (sender, e) =>
+                {
+                    Console.WriteLine($"{fileName} {e.ProgressPercentage}% {e.BytesReceived / 1024 / 1024}MB {e.TotalBytesToReceive / 1024 / 1024}MB");
+                };
+                client.DownloadFileCompleted += (sender, e) =>
+                {
+                    Console.WriteLine($"File Downloaded.");
+                };
+                await client.DownloadFileTaskAsync(uri, @"z:/video.mp4");
+            }
         }
 
         static IEnumerable<VideoPage> GetVideoPagesFromDisk()
