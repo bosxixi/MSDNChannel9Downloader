@@ -13,9 +13,9 @@ namespace MSDNChannel9Downloader.Tests
     public class SeriesTests
     {
         [TestMethod()]
-        public void getPageVideosTest()
+        public void GetMaxPageNumberTest()
         {
-            int number = Series.getMaxPageNumber("https://channel9.msdn.com/Series/aspnetmonsters");
+            int number = Series.GetMaxPageNumber("https://channel9.msdn.com/Series/aspnetmonsters");
             Assert.IsTrue(number > 0);
         }
     }

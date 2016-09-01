@@ -17,12 +17,7 @@ namespace MSDNChannel9Downloader
     {
         static void Main(string[] args)
         {
-            //var client = new HttpClient();
-            //Series series = new Series("https://channel9.msdn.com/Tags/asp.net", client);
-            //Task task = LoadVideoPagesToDiskAsync(series);
-            //task.Wait();
-            //series.SaveTo();
-            //Console.WriteLine("File Saved!");
+            LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/aspnetmonsters").Wait();
 
             //var vps = GetVideoPagesFromDisk();
             //foreach (var item in vps)
@@ -54,18 +49,16 @@ namespace MSDNChannel9Downloader
         static IEnumerable<VideoPage> GetVideoPagesFromDisk()
         {
             string enPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-            string path = Path.Combine(enPath, "fsharp.json");
+            string path = Path.Combine(enPath, "Using-Git-with-Visual-Studio-2013.json");
             string file = File.ReadAllText(path);
         
             return JsonConvert.DeserializeObject<IEnumerable<VideoPage>>(file);
         }
 
-        static async Task LoadVideoPagesToDiskAsync(Series series)
+        static async Task LoadVideoPagesToDiskAsync(string uri)
         {
+            var series = await Series.GetAsync(uri);
             List<Task> TaskList = new List<Task>();
-
-            await series.LoadVideoPages();
-
             foreach (var item in series.VideoPages)
             {
                 item.Print();
@@ -73,11 +66,12 @@ namespace MSDNChannel9Downloader
                 LastTask.Start();
                 TaskList.Add(LastTask);;
             }
+
             await Task.WhenAll(TaskList.ToArray());
-            
+
+            series.SaveTo();
         }
 
-
-
+    
     }
 }

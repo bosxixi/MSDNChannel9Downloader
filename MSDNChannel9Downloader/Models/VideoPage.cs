@@ -31,30 +31,34 @@ namespace MSDNChannel9Downloader
                 return MediaFileInfos.FirstOrDefault(c => c.Type == (MediaFileType)max);
             }
         }
+
+
+
         public void LoadMediaFileInfos()
         {
             try
             {
-                MediaFileInfos = MediaFileInfos ?? new List<MediaFileInfo>();
-                WebClient client = new WebClient();
-                string htmlString = client.DownloadString(Url);
-                var htmlDocument = new HtmlDocument();
-                htmlDocument.LoadHtml(htmlString);
-                var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
-
-                foreach (var li in lis)
+                using (var client = new WebClient())
                 {
-                    var file = new MediaFileInfo()
+                    MediaFileInfos = MediaFileInfos ?? new List<MediaFileInfo>();
+                    string htmlString = client.DownloadString(Url);
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(htmlString);
+                    var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
+
+                    foreach (var li in lis)
                     {
-                        FileUri = GetMediaFileUri(li),
-                        FileSize = GetMediaFileSize(li),
-                        Type = GetMediaFileType(li)
-                    };
-                    lock (syncRoot)
-                    {
-                        MediaFileInfos.Add(file);
+                        var file = new MediaFileInfo()
+                        {
+                            FileUri = GetMediaFileUri(li),
+                            FileSize = GetMediaFileSize(li),
+                            Type = GetMediaFileType(li)
+                        };
+                        lock (syncRoot)
+                        {
+                            MediaFileInfos.Add(file);
+                        }
                     }
-            
                 }
                 BestQuality?.Print();
             }
@@ -66,7 +70,6 @@ namespace MSDNChannel9Downloader
                 Console.WriteLine($"Url: {Url}");
                 Console.WriteLine(ex.Message);
                 Console.WriteLine("//-------------------------Exception End");
-
             }
         }
        
@@ -110,8 +113,6 @@ namespace MSDNChannel9Downloader
             Console.WriteLine($"Url: {Url}");
             Console.WriteLine();
         }
-
-
     }
 
 

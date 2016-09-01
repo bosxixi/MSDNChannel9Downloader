@@ -6,13 +6,15 @@ using System.Net.Http;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using System.IO;
+using System.Net;
+using System.Threading;
 
 namespace MSDNChannel9Downloader
 {
 
     public class Series
     {
-        public Series(string seriesLink, HttpClient httpClient)
+        private Series(string seriesLink)
         {
             if (String.IsNullOrEmpty(seriesLink))
             {
@@ -22,69 +24,58 @@ namespace MSDNChannel9Downloader
             {
                 throw new ArgumentException("can not contain paramater.");
             }
-            if (httpClient == null)
-            {
-                throw new ArgumentNullException(nameof(seriesLink));
-            }
             Uri uri = new Uri(seriesLink);
             Name = uri.AbsolutePath.Split('/')[2];
-            Console.WriteLine("Starting...");
-
-            HtmlDocuments = new List<HtmlDocument>();
             SeriesLink = seriesLink;
-
-
-            _httpClient = httpClient;
-            PageCount = getMaxPageNumber(SeriesLink);
-            Console.WriteLine($"This Series has {PageCount} pages.");
+   
+            VideoPages = new List<VideoPage>();
+            _cache = new Dictionary<string, Task<string>>();
+            Console.WriteLine("Starting...");
         }
-        public string Name { get; set; }
-        public string SeriesLink { get; set; }
+        public string Name { get; private set; }
+        public string SeriesLink { get; private set; }
+        public string pageParmName { get; private set; } = "page";
+        public List<VideoPage> VideoPages { get; private set; }
+        private readonly Dictionary<string, Task<string>> _cache;
 
-        [JsonIgnore]
-        public readonly HttpClient _httpClient;
-
-
-        public string pageParmName { get; set; } = "page";
-
-        [JsonIgnore]
-        public readonly ICollection<HtmlDocument> HtmlDocuments;
-
-        public int PageCount { get; private set; }
-
-        public List<VideoPage> VideoPages { get; set; }
-        public async Task LoadVideoPages()
+        public static async Task<Series> GetAsync(string seriesLink)
         {
-            if (VideoPages == null)
+            Series series = new Series(seriesLink);
+            var pageCount = GetMaxPageNumber(series.SeriesLink);
+            foreach (var uri in series.GetUris(pageCount))
             {
-                VideoPages = new List<VideoPage>();
+                series.GetWebPageAsync(uri);
             }
-            if (!HtmlDocuments?.Any() ?? true)
+
+            var tasks = series._cache.Select(c => c.Value);
+            string[] htmls = await Task.WhenAll(tasks);
+            Console.WriteLine("All page downloaded");
+
+            Thread.Sleep(3000);
+
+            var htmlDocs = htmls.Select(h => series.Parse(h));
+            foreach (var htmlDoc in htmlDocs)
             {
-                await LoadHtmlDocumentsAsync();
+                series.VideoPages.AddRange(series.GetPageVideos(htmlDoc));
             }
-            foreach (var item in HtmlDocuments)
-            {
-                var pageVideoLinks = getPageVideos(item);
-                VideoPages.AddRange(pageVideoLinks);
-            }
+            return series;
         }
 
-
-        private async Task<string> GetHtmlByPageNumerAsync(string pageParmName, int page) =>
-            await _httpClient.GetStringAsync($"{SeriesLink}?{pageParmName}={page}");
-
-        private async Task LoadHtmlDocumentsAsync()
+        private Task<string> GetWebPageAsync(string uri)
         {
-            foreach (var html in await GetHtmlsAsync())
-            {
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(html);
-                HtmlDocuments.Add(htmlDoc);
-            }
+            Task<string> downloadTask;
+            if (_cache.TryGetValue(uri, out downloadTask)) return downloadTask;
+            return _cache[uri] = new WebClient().DownloadStringTaskAsync(uri);
         }
 
-        public IEnumerable<VideoPage> getPageVideos(HtmlDocument htmlDocument)
+        private HtmlDocument Parse(string html)
+        {
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(html);
+            return htmlDoc;
+        }
+
+        private IEnumerable<VideoPage> GetPageVideos(HtmlDocument htmlDocument)
         {
             Uri uri = new Uri(SeriesLink);
             return htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.entries li a.title").Select(c =>
@@ -94,29 +85,26 @@ namespace MSDNChannel9Downloader
                 Url = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
             });
         }
-
-        public static int getMaxPageNumber(string url)
+    
+        public static int GetMaxPageNumber(string uri)
         {
             HtmlWeb web = new HtmlWeb();
-            HtmlDocument htmlDocument = web.Load(url);
+            HtmlDocument htmlDocument = web.Load(uri);
             var pager = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.paging li a");
             if (!pager.Any())
             {
                 return 1;
             }
-
             return int.Parse(pager.Last(c => c.InnerText.IsNumeric()).InnerText);
         }
 
-        private async Task<IEnumerable<string>> GetHtmlsAsync()
+        private IEnumerable<string> GetUris(int pageCount)
         {
-            List<string> htmls = new List<string>();
-            for (int i = 1; i <= PageCount; i++)
+            Console.WriteLine($"Total pages {pageCount}");
+            for (int i = 1; i <= pageCount; i++)
             {
-                htmls.Add(await GetHtmlByPageNumerAsync(pageParmName, i));
-                Console.WriteLine($"Page {i} downloaded");
+                yield return $"{SeriesLink}?{pageParmName}={i}";
             }
-            return htmls;
         }
 
         public void SaveTo(string path = null)
@@ -134,6 +122,7 @@ namespace MSDNChannel9Downloader
             }
 
             File.WriteAllText(path, json);
+            Console.WriteLine("File Saved");
         }
     }
 }
