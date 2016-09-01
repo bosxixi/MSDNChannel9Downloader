@@ -17,16 +17,19 @@ namespace MSDNChannel9Downloader
     {
         static void Main(string[] args)
         {
-            LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/aspnetmonsters").Wait();
 
-            //var vps = GetVideoPagesFromDisk();
-            //foreach (var item in vps)
-            //{
-            //    if (item.BestQuality != null)
-            //    {
-            //        Console.WriteLine(item.BestQuality.FileUri);
-            //    }
-            //}
+            //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/aspnetmonsters").Wait();
+            //http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4
+
+            //DownloadFile("sdfsf.mp4", @"z:/", "http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4");
+            var vps = GetVideoPagesFromDisk();
+            foreach (var item in vps)
+            {
+                if (item.BestQuality != null)
+                {
+                    Console.WriteLine(item.BestQuality.FileUri);
+                }
+            }
             Console.ReadLine();
         }
 
@@ -42,16 +45,16 @@ namespace MSDNChannel9Downloader
                 {
                     Console.WriteLine($"File Downloaded.");
                 };
-                await client.DownloadFileTaskAsync(uri, @"z:/video.mp4");
+                await client.DownloadFileTaskAsync(uri, $@"z:/video.mp4");
             }
         }
 
         static IEnumerable<VideoPage> GetVideoPagesFromDisk()
         {
             string enPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-            string path = Path.Combine(enPath, "Using-Git-with-Visual-Studio-2013.json");
+            string path = Path.Combine(enPath, "fsharp.json");
             string file = File.ReadAllText(path);
-        
+
             return JsonConvert.DeserializeObject<IEnumerable<VideoPage>>(file);
         }
 
@@ -64,7 +67,7 @@ namespace MSDNChannel9Downloader
                 item.Print();
                 var LastTask = new Task(item.LoadMediaFileInfos);
                 LastTask.Start();
-                TaskList.Add(LastTask);;
+                TaskList.Add(LastTask); ;
             }
 
             await Task.WhenAll(TaskList.ToArray());
@@ -72,6 +75,6 @@ namespace MSDNChannel9Downloader
             series.SaveTo();
         }
 
-    
+
     }
 }

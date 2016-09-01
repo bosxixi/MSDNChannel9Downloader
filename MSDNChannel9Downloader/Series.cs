@@ -30,6 +30,7 @@ namespace MSDNChannel9Downloader
    
             VideoPages = new List<VideoPage>();
             _cache = new Dictionary<string, Task<string>>();
+            _uris = new Dictionary<int, string>();
             Console.WriteLine("Starting...");
         }
         public string Name { get; private set; }
@@ -37,21 +38,23 @@ namespace MSDNChannel9Downloader
         public string pageParmName { get; private set; } = "page";
         public List<VideoPage> VideoPages { get; private set; }
         private readonly Dictionary<string, Task<string>> _cache;
+        private Dictionary<int, string> _uris { get; set; }
 
         public static async Task<Series> GetAsync(string seriesLink)
         {
             Series series = new Series(seriesLink);
             var pageCount = GetMaxPageNumber(series.SeriesLink);
-            foreach (var uri in series.GetUris(pageCount))
+            series.LoadUris(pageCount);
+            foreach (var item in series._uris)
             {
-                series.GetWebPageAsync(uri);
+                series.GetWebPageAsync(item.Key, item.Value);
             }
 
             var tasks = series._cache.Select(c => c.Value);
             string[] htmls = await Task.WhenAll(tasks);
             Console.WriteLine("All page downloaded");
 
-            Thread.Sleep(3000);
+            //Thread.Sleep(3000);
 
             var htmlDocs = htmls.Select(h => series.Parse(h));
             foreach (var htmlDoc in htmlDocs)
@@ -61,11 +64,14 @@ namespace MSDNChannel9Downloader
             return series;
         }
 
-        private Task<string> GetWebPageAsync(string uri)
+        private Task<string> GetWebPageAsync(int page, string uri)
         {
             Task<string> downloadTask;
             if (_cache.TryGetValue(uri, out downloadTask)) return downloadTask;
-            return _cache[uri] = new WebClient().DownloadStringTaskAsync(uri);
+            var client = new WebClient();
+            downloadTask = client.DownloadStringTaskAsync(uri);
+            client.DownloadStringCompleted += (sender, args) => { Console.WriteLine($"Page {page} download"); };
+            return _cache[uri] = downloadTask;
         }
 
         private HtmlDocument Parse(string html)
@@ -98,12 +104,12 @@ namespace MSDNChannel9Downloader
             return int.Parse(pager.Last(c => c.InnerText.IsNumeric()).InnerText);
         }
 
-        private IEnumerable<string> GetUris(int pageCount)
+        private void LoadUris(int pageCount)
         {
             Console.WriteLine($"Total pages {pageCount}");
             for (int i = 1; i <= pageCount; i++)
             {
-                yield return $"{SeriesLink}?{pageParmName}={i}";
+                _uris.Add(i, $"{SeriesLink}?{pageParmName}={i}");
             }
         }
 
