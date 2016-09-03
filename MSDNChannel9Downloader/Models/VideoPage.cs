@@ -27,18 +27,6 @@ namespace MSDNChannel9Downloader
                 return Title.GetValidFileName();
             }
         }
-        public MediaFileType? BestQualityType
-        {
-            get
-            {
-                if (!MediaFileInfos?.Any() ?? true)
-                {
-                    return null;
-                }
-                int max = MediaFileInfos.Select(c => (int)c.Type).Max();
-                return MediaFileInfos.FirstOrDefault(c => c.Type == (MediaFileType)max).Type;
-            }
-        }
 
         public MediaFileInfo BestQuality
         {

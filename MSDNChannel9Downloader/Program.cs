@@ -12,7 +12,6 @@ using System.IO;
 using System.Threading;
 using System.Text.RegularExpressions;
 using NLog;
-using Konsole;
 
 namespace MSDNChannel9Downloader
 {
@@ -47,33 +46,21 @@ namespace MSDNChannel9Downloader
             #endregion
 
             DownloadVideoToDiskAsync().Wait();
-
-
+           
             //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/Using-Git-with-Visual-Studio-2013").Wait();
             //http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4
 
             //DownloadFile("sdfsf.mp4", @"z:/", "http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4");
-            //var vps = GetVideoPagesFromDisk();
+            //var vps = GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\Using-Git-with-Visual-Studio-2013.json");
             //foreach (var item in vps)
             //{
             //    if (item.BestQuality != null)
             //    {
-            //        Console.WriteLine(item.BestQuality.FileUri);
+            //        Console.WriteLine(item.FileName);
             //    }
             //}
             Console.ReadLine();
         }
-        public static void ProcessFiles(string directory, string[] files, ProgressBar bar)
-        {
-            var cnt = files.Count();
-            foreach (var file in files)
-            {
-                bar.Next(new FileInfo(file).Name);
-                Thread.Sleep(133);
-            }
-        }
-
-
 
         static IEnumerable<VideoPage> GetVideoPagesFromDisk(string path)
         {

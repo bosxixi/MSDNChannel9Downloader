@@ -1,10 +1,11 @@
-﻿using Konsole;
-using NLog;
+﻿using NLog;
+using ShellProgressBar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MSDNChannel9Downloader
@@ -12,12 +13,16 @@ namespace MSDNChannel9Downloader
     public class Downloader
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private static VideoPage _videoPage;
+        private VideoPage _videoPage;
+        private static List<ProgressBar> _bars;
         private ProgressBar bar;
+        private static object syncRoot = new Object();
+        public int CurrentPercent { get; set; }
+
         public Downloader(VideoPage videoPage)
         {
 
-            logger.Debug(videoPage.Title + "Create");
+            //logger.Debug(videoPage.Title + "Create");
             _videoPage = videoPage;
         }
 
@@ -25,7 +30,7 @@ namespace MSDNChannel9Downloader
         {
             foreach (var item in _videoPage.MediaFileInfos)
             {
-                if (_videoPage.BestQualityType != null && item.Type == _videoPage.BestQualityType)
+                if (_videoPage.BestQuality != null && item == _videoPage.BestQuality)
                 {
                     await DownloadFileAsync(item);
                 }
@@ -38,16 +43,34 @@ namespace MSDNChannel9Downloader
             {
                 client.DownloadProgressChanged += (sender, e) =>
                 {
+                    if (_bars == null)
+                    {
+                        _bars = new List<ProgressBar>();
+                    }
                     if (bar == null)
                     {
-                        if (int.MaxValue < e.TotalBytesToReceive)
+                        var options = new ProgressBarOptions()
                         {
-                            throw new IndexOutOfRangeException();
+                            DisplayTimeInRealTime = false,
+                            CollapseWhenFinished = true,
+                            ProgressBarOnBottom = false,
+                            ProgressCharacter = '*',
+                            
+                        };
+                        bar = new ProgressBar(100, _videoPage.Title, options: options);
+                        lock (syncRoot)
+                        {
+                            _bars.Add(bar);
                         }
-                        logger.Debug("ProgressBar create");
-                        bar = new ProgressBar((int)e.TotalBytesToReceive);
                     }
-                    bar.Refresh((int)e.BytesReceived, _videoPage.Title);
+
+                    if (CurrentPercent < e.ProgressPercentage)
+                    {
+                        CurrentPercent = e.ProgressPercentage;
+                        bar.Tick($"{_videoPage.Title} {e.BytesReceived / 1024 / 1024 }MB /{e.TotalBytesToReceive / 1024 / 1024}MB");
+                    }
+
+                    //Thread.Sleep(3000);
                     //Console.WriteLine($"{_videoPage.Title} {e.ProgressPercentage}% {e.BytesReceived} {e.TotalBytesToReceive}");
                 };
                 string folder = $@"z:/Using-Git-with-Visual-Studio-2013/";
