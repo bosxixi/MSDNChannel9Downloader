@@ -14,7 +14,7 @@ namespace MSDNChannel9Downloader
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private VideoPage _videoPage;
-        private ProgressBar _bar;
+        private ShellProgressBar.ProgressBar _bar;
         public int CurrentPercent { get; set; }
         private string folder { get; set; }
 
@@ -72,7 +72,7 @@ namespace MSDNChannel9Downloader
                             ProgressCharacter = '*',
 
                         };
-                        _bar = new ProgressBar(100, _videoPage.Title, options: options);
+                        _bar = new ShellProgressBar.ProgressBar(100, _videoPage.Title, options: options);
                     }
 
                     if (CurrentPercent < e.ProgressPercentage)

@@ -21,10 +21,12 @@ namespace MSDNChannel9Downloader
         private static Logger logger = LogManager.GetCurrentClassLogger();
         static void Main(string[] args)
         {
-            //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Tags/fsharp").Wait();
-            //DownloadVideoToDiskAsync().Wait();
+            Console.WriteLine("please input Series or Tags Uri link? --example https://channel9.msdn.com/Tags/fsharp");
+            string uri = Console.ReadLine();
+            Console.WriteLine("Store to where path?     --example d:/foldername");
+            string path = Console.ReadLine();
 
-            DownloadAsync("https://channel9.msdn.com/Series/htmlperf").Wait();
+            DownloadAsync(uri, path).Wait();
             Console.ReadLine();
         }
 
@@ -69,7 +71,7 @@ namespace MSDNChannel9Downloader
 
             series.SaveTo();
         }
-        static async Task DownloadAsync(string uri)
+        static async Task DownloadAsync(string uri, string path)
         {
             Regex r = new Regex(@"[^/]+", RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
             var title = r.Match(uri).ToString();
@@ -85,20 +87,20 @@ namespace MSDNChannel9Downloader
             }
             await Task.WhenAll(TaskList.ToArray());
 
+            Console.Clear();
+
             List<Task> tasks = new List<Task>();
             foreach (var item in series.VideoPages)
             {
                 if (item.BestQuality != null)
                 {
-                    var LastTask = new Task(() => { new Downloader(item, $@"F:\d\{title}\").StartDownloadAsync(); });
+                    var LastTask = new Task(() => { new Downloader(item, $@"{path}/{title}/").StartDownloadAsync(); });
                     LastTask.Start();
                     tasks.Add(LastTask);
                 }
             }
 
             await Task.WhenAll(tasks.ToArray());
-
-            Console.WriteLine("complete!");
         }
 
     }
