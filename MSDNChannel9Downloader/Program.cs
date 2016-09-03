@@ -94,6 +94,7 @@ namespace MSDNChannel9Downloader
             {
                 if (item.BestQuality != null)
                 {
+                    Console.WriteLine($"0.00% | {item.Title}");
                     var LastTask = new Task(() => { new Downloader(item, $@"{path}/{title}/").StartDownloadAsync(); });
                     LastTask.Start();
                     tasks.Add(LastTask);

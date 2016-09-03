@@ -1,5 +1,4 @@
 ﻿using NLog;
-using ShellProgressBar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace MSDNChannel9Downloader
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private VideoPage _videoPage;
-        private ShellProgressBar.ProgressBar _bar;
+        private ProgressBar _bar;
         public int CurrentPercent { get; set; }
         private string folder { get; set; }
 
@@ -61,24 +60,25 @@ namespace MSDNChannel9Downloader
             {
                 client.DownloadProgressChanged += (sender, e) =>
                 {
-
                     if (_bar == null)
                     {
-                        var options = new ProgressBarOptions()
-                        {
-                            DisplayTimeInRealTime = false,
-                            CollapseWhenFinished = true,
-                            ProgressBarOnBottom = false,
-                            ProgressCharacter = '*',
+                        //var options = new ProgressBarOptions()
+                        //{
+                        //    DisplayTimeInRealTime = false,
+                        //    CollapseWhenFinished = true,
+                        //    ProgressBarOnBottom = false,
+                        //    ProgressCharacter = '*',
 
-                        };
-                        _bar = new ShellProgressBar.ProgressBar(100, _videoPage.Title, options: options);
+                        //};
+                        _bar = new ProgressBar(e.TotalBytesToReceive);
                     }
 
                     if (CurrentPercent < e.ProgressPercentage)
                     {
                         CurrentPercent = e.ProgressPercentage;
-                        _bar.Tick($"{_videoPage.Title} {e.BytesReceived / 1024 / 1024 }MB /{e.TotalBytesToReceive / 1024 / 1024}MB");
+                        var dataR = (e.BytesReceived / 1024m / 1024m).ToString("0.00");
+                        var dataT = (e.TotalBytesToReceive / 1024m / 1024m).ToString("0.00");
+                        _bar.Tick(e.BytesReceived ,$"{_videoPage.Title} {dataR}MB /{dataT}MB");
                     }
 
                     //Console.WriteLine($"{_videoPage.Title} {e.ProgressPercentage}% {e.BytesReceived} {e.TotalBytesToReceive}");

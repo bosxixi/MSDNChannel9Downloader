@@ -9,10 +9,12 @@ namespace MSDNChannel9Downloader
     public class ProgressBar : IProgressBar
     {
         public readonly int _row;
-        public ProgressBar(int row, long maxTicks)
+        public static int Count { get; private set; }
+        public ProgressBar(long maxTicks)
         {
-            _row = row;
+            _row = Count;
             MaxTicks = maxTicks;
+            Count++;
         }
         public long CurrentTick { get; private set; }
         public long MaxTicks { get; private set; }
