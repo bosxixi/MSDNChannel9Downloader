@@ -54,8 +54,6 @@ namespace MSDNChannel9Downloader
             string[] htmls = await Task.WhenAll(tasks);
             Console.WriteLine("All page downloaded");
 
-            //Thread.Sleep(3000);
-
             var htmlDocs = htmls.Select(h => series.Parse(h));
             foreach (var htmlDoc in htmlDocs)
             {
@@ -88,7 +86,7 @@ namespace MSDNChannel9Downloader
             new VideoPage
             {
                 Title = c.InnerText.Replace("&#160;", " "),
-                Url = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
+                Uri = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
             });
         }
     

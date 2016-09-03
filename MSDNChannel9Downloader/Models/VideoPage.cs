@@ -6,18 +6,39 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MSDNChannel9Downloader
 {
     public class VideoPage
     {
-        public string Url { get; set; }
+        public string Uri { get; set; }
         public string Title { get; set; }
 
         private static object syncRoot = new Object();
 
         public List<MediaFileInfo> MediaFileInfos { get; set; }
+
+        public string FileName
+        {
+            get
+            {
+                return Title.GetValidFileName();
+            }
+        }
+        public MediaFileType? BestQualityType
+        {
+            get
+            {
+                if (!MediaFileInfos?.Any() ?? true)
+                {
+                    return null;
+                }
+                int max = MediaFileInfos.Select(c => (int)c.Type).Max();
+                return MediaFileInfos.FirstOrDefault(c => c.Type == (MediaFileType)max).Type;
+            }
+        }
 
         public MediaFileInfo BestQuality
         {
@@ -27,8 +48,8 @@ namespace MSDNChannel9Downloader
                 {
                     return null;
                 }
-                int max = MediaFileInfos.Select(c => (int)c.Type).Max();
-                return MediaFileInfos.FirstOrDefault(c => c.Type == (MediaFileType)max);
+                float max = MediaFileInfos.Select(c => c.FileSize).Max();
+                return MediaFileInfos.FirstOrDefault(c => c.FileSize == max);
             }
         }
 
@@ -41,7 +62,7 @@ namespace MSDNChannel9Downloader
                 using (var client = new WebClient())
                 {
                     MediaFileInfos = MediaFileInfos ?? new List<MediaFileInfo>();
-                    string htmlString = client.DownloadString(Url);
+                    string htmlString = client.DownloadString(Uri);
                     var htmlDocument = new HtmlDocument();
                     htmlDocument.LoadHtml(htmlString);
                     var lis = htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.download li");
@@ -52,7 +73,8 @@ namespace MSDNChannel9Downloader
                         {
                             FileUri = GetMediaFileUri(li),
                             FileSize = GetMediaFileSize(li),
-                            Type = GetMediaFileType(li)
+                            Type = GetMediaFileType(li),
+                            FileSizeUnit = GetMediaFileSizeUnit(li)
                         };
                         lock (syncRoot)
                         {
@@ -67,20 +89,30 @@ namespace MSDNChannel9Downloader
 
                 Console.WriteLine("//-------------------------Exception");
                 Console.WriteLine($"Title: {Title}");
-                Console.WriteLine($"Url: {Url}");
+                Console.WriteLine($"Url: {Uri}");
                 Console.WriteLine(ex.Message);
                 Console.WriteLine("//-------------------------Exception End");
             }
         }
-       
+
         private string GetMediaFileUri(HtmlNode node)
         {
             return node.QuerySelectorAll("a").Single().Attributes["href"].Value;
         }
-        private string GetMediaFileSize(HtmlNode node)
+        private float GetMediaFileSize(HtmlNode node)
         {
             string text = node.QuerySelectorAll("div.popup").Single().InnerText;
-            return text.Substring(text.Length - 15, 15).Trim();
+            text = text.Substring(text.Length - 15, 15).Trim();
+            Regex r = new Regex(@"\d+.?\d", RegexOptions.IgnoreCase);
+            return float.Parse(r.Match(text).ToString());
+          
+        }
+        private string GetMediaFileSizeUnit(HtmlNode node)
+        {
+            string text = node.QuerySelectorAll("div.popup").Single().InnerText;
+            text = text.Substring(text.Length - 15, 15).Trim();
+            Regex r = new Regex(@"[^ ?\d+.?\d ?]+", RegexOptions.IgnoreCase);
+            return r.Match(text).ToString();
         }
         private MediaFileType GetMediaFileType(HtmlNode node)
         {
@@ -100,17 +132,17 @@ namespace MSDNChannel9Downloader
             {
                 return MediaFileType.HighQualityMP4;
             }
-            if (node.QuerySelectorAll("a").Single().InnerText.Contains("WMV"))
+            if (!node.QuerySelectorAll("a").Single().InnerText.Contains(",") && !node.QuerySelectorAll("a").Single().InnerText.Contains("，"))
             {
-                return MediaFileType.WMV;
+                return MediaFileType.HighQualityWMV;
             }
-            return MediaFileType.Unknow;
+            return MediaFileType.MidQualityWMV;
         }
 
         public void Print()
         {
             Console.WriteLine($"Title: {Title}");
-            Console.WriteLine($"Url: {Url}");
+            Console.WriteLine($"Url: {Uri}");
             Console.WriteLine();
         }
     }

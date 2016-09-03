@@ -8,7 +8,6 @@ namespace MSDNChannel9Downloader
 {
     public enum MediaFileType
     {
-        Unknow = 0,
         /// <summary>
         /// Audio only
         /// </summary>
@@ -18,16 +17,20 @@ namespace MSDNChannel9Downloader
         /// </summary>
         LowQualityMP4 = 2,
         /// <summary>
+        /// Lo-band, Mobile
+        /// </summary>
+        MidQualityWMV = 3,
+        /// <summary>
         /// approx. 2-2.5Mbps
         /// </summary>
-        MidQualityMP4 = 3,
+        MidQualityMP4 = 4,
         /// <summary>
         /// best available
         /// </summary>
-        HighQualityMP4 = 4,
+        HighQualityMP4 = 5,
         /// <summary>
         /// best available
         /// </summary>
-        WMV = 5
+        HighQualityWMV = 6
     }
 }
