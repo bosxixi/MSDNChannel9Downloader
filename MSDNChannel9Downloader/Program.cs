@@ -21,20 +21,10 @@ namespace MSDNChannel9Downloader
         private static Logger logger = LogManager.GetCurrentClassLogger();
         static void Main(string[] args)
         {
-            DownloadVideoToDiskAsync().Wait();
-           
             //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Tags/fsharp").Wait();
-            //http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4
+            //DownloadVideoToDiskAsync().Wait();
 
-            //DownloadFile("sdfsf.mp4", @"z:/", "http://video.ch9.ms/ch9/d284/76aa3635-9cbe-4737-93c2-09aff655d284/Config_mid.mp4");
-            //var vps = GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\Using-Git-with-Visual-Studio-2013.json");
-            //foreach (var item in vps)
-            //{
-            //    if (item.BestQuality != null)
-            //    {
-            //        Console.WriteLine(item.FileName);
-            //    }
-            //}
+            DownloadAsync("https://channel9.msdn.com/Series/htmlperf").Wait();
             Console.ReadLine();
         }
 
@@ -79,7 +69,37 @@ namespace MSDNChannel9Downloader
 
             series.SaveTo();
         }
+        static async Task DownloadAsync(string uri)
+        {
+            Regex r = new Regex(@"[^/]+", RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
+            var title = r.Match(uri).ToString();
 
+            var series = await Series.GetAsync(uri);
+            List<Task> TaskList = new List<Task>();
+            foreach (var item in series.VideoPages)
+            {
+                item.Print();
+                var LastTask = new Task(item.LoadMediaFileInfos);
+                LastTask.Start();
+                TaskList.Add(LastTask); ;
+            }
+            await Task.WhenAll(TaskList.ToArray());
+
+            List<Task> tasks = new List<Task>();
+            foreach (var item in series.VideoPages)
+            {
+                if (item.BestQuality != null)
+                {
+                    var LastTask = new Task(() => { new Downloader(item, $@"F:\d\{title}\").StartDownloadAsync(); });
+                    LastTask.Start();
+                    tasks.Add(LastTask);
+                }
+            }
+
+            await Task.WhenAll(tasks.ToArray());
+
+            Console.WriteLine("complete!");
+        }
 
     }
 }
