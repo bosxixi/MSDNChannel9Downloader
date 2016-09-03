@@ -75,6 +75,7 @@ namespace MSDNChannel9Downloader
         {
             Regex r = new Regex(@"[^/]+", RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
             var title = r.Match(uri).ToString();
+            Console.Title = title;
 
             var series = await Series.GetAsync(uri);
             List<Task> TaskList = new List<Task>();
