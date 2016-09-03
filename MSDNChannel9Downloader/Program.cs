@@ -21,13 +21,14 @@ namespace MSDNChannel9Downloader
         private static Logger logger = LogManager.GetCurrentClassLogger();
         static void Main(string[] args)
         {
-            Console.ReadLine();
-            Console.WriteLine("please input Series or Tags Uri link? --example https://channel9.msdn.com/Tags/fsharp");
-            string uri = Console.ReadLine();
-            Console.WriteLine("Store to where path?     --example d:/foldername");
-            string path = Console.ReadLine();
+            //LoadVideoPagesToDiskAsync
 
-            DownloadAsync(uri, path).Wait();
+            //Console.WriteLine("please input Series or Tags Uri link? --example https://channel9.msdn.com/Tags/fsharp");
+            //string uri = Console.ReadLine();
+            //Console.WriteLine("Store to where path?     --example d:/foldername");
+            //string path = Console.ReadLine();
+
+            //DownloadAsync(uri, path).Wait();
             Console.ReadLine();
         }
 
