@@ -14,14 +14,24 @@ namespace MSDNChannel9Downloader
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private VideoPage _videoPage;
-        private static List<ProgressBar> _bars;
-        private ProgressBar bar;
-        private static object syncRoot = new Object();
+        private ProgressBar _bar;
         public int CurrentPercent { get; set; }
+        private string folder { get; set; }
 
-        public Downloader(VideoPage videoPage)
+        public MediaFileType? TypeToDownload { get; }
+
+        public Downloader(VideoPage videoPage, string folder, MediaFileType? typeToDownload = null)
         {
-
+            if (String.IsNullOrEmpty(folder))
+            {
+                throw new ArgumentNullException(nameof(folder));
+            }
+            if (!System.IO.Directory.Exists(folder))
+            {
+                System.IO.Directory.CreateDirectory(folder);
+            }
+            this.TypeToDownload = typeToDownload;
+            this.folder = folder;
             //logger.Debug(videoPage.Title + "Create");
             _videoPage = videoPage;
         }
@@ -30,10 +40,18 @@ namespace MSDNChannel9Downloader
         {
             foreach (var item in _videoPage.MediaFileInfos)
             {
-                if (_videoPage.BestQuality != null && item == _videoPage.BestQuality)
+                if (TypeToDownload != null)
+                {
+                    if (item.Type == TypeToDownload)
+                    {
+                        await DownloadFileAsync(item);
+                    }
+                }
+                else if (_videoPage.BestQuality != null && _videoPage.BestQuality == item)
                 {
                     await DownloadFileAsync(item);
                 }
+
             }
         }
 
@@ -43,11 +61,8 @@ namespace MSDNChannel9Downloader
             {
                 client.DownloadProgressChanged += (sender, e) =>
                 {
-                    if (_bars == null)
-                    {
-                        _bars = new List<ProgressBar>();
-                    }
-                    if (bar == null)
+
+                    if (_bar == null)
                     {
                         var options = new ProgressBarOptions()
                         {
@@ -55,30 +70,21 @@ namespace MSDNChannel9Downloader
                             CollapseWhenFinished = true,
                             ProgressBarOnBottom = false,
                             ProgressCharacter = '*',
-                            
+
                         };
-                        bar = new ProgressBar(100, _videoPage.Title, options: options);
-                        lock (syncRoot)
-                        {
-                            _bars.Add(bar);
-                        }
+                        _bar = new ProgressBar(100, _videoPage.Title, options: options);
                     }
 
                     if (CurrentPercent < e.ProgressPercentage)
                     {
                         CurrentPercent = e.ProgressPercentage;
-                        bar.Tick($"{_videoPage.Title} {e.BytesReceived / 1024 / 1024 }MB /{e.TotalBytesToReceive / 1024 / 1024}MB");
+                        _bar.Tick($"{_videoPage.Title} {e.BytesReceived / 1024 / 1024 }MB /{e.TotalBytesToReceive / 1024 / 1024}MB");
                     }
 
-                    //Thread.Sleep(3000);
                     //Console.WriteLine($"{_videoPage.Title} {e.ProgressPercentage}% {e.BytesReceived} {e.TotalBytesToReceive}");
                 };
-                string folder = $@"z:/Using-Git-with-Visual-Studio-2013/";
                 string enumName = Enum.GetName(typeof(MediaFileType), mediaFileInfo.Type);
-                if (!System.IO.Directory.Exists(folder))
-                {
-                    System.IO.Directory.CreateDirectory(folder);
-                }
+
                 await client.DownloadFileTaskAsync(new Uri(mediaFileInfo.FileUri), $@"{folder}{_videoPage.FileName}_{enumName}.{mediaFileInfo.Suffix}");
             }
         }
