@@ -27,7 +27,7 @@ namespace MSDNChannel9Downloader
             Uri uri = new Uri(seriesLink);
             Name = uri.AbsolutePath.Split('/')[2];
             SeriesLink = seriesLink;
-   
+
             VideoPages = new List<VideoPage>();
             _cache = new Dictionary<string, Task<string>>();
             _uris = new Dictionary<int, string>();
@@ -89,7 +89,7 @@ namespace MSDNChannel9Downloader
                 Uri = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
             });
         }
-    
+
         public static int GetMaxPageNumber(string uri)
         {
             HtmlWeb web = new HtmlWeb();
@@ -127,6 +127,24 @@ namespace MSDNChannel9Downloader
 
             File.WriteAllText(path, json);
             Console.WriteLine("File Saved");
+            SaveBestQualityUri();
+        }
+
+        public void SaveBestQualityUri(string path = null)
+        {
+            if (String.IsNullOrEmpty(path))
+            {
+                path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}-Uri.json";
+            }
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            var uris = VideoPages.Where(c => c.BestQuality != null).Select(c => c.BestQuality.FileUri);
+            File.WriteAllLines(path, uris);
+            Console.WriteLine("File-Uri Saved");
         }
     }
 }
