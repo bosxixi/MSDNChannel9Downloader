@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="bosxixi.Extensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\bosxixi.Extensions.1.0.0.5\lib\net452\bosxixi.Extensions.dll</HintPath>
+      <HintPath>..\packages\bosxixi.Extensions.1.0.0.8\lib\net452\bosxixi.Extensions.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="bosxixi.ProgressBar, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -76,7 +76,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Downloader.cs" />
-    <Compile Include="Extension.cs" />
     <Compile Include="Models\MediaFileInfo.cs" />
     <Compile Include="Models\MediaFileType.cs" />
     <Compile Include="Program.cs" />
@@ -92,7 +91,9 @@
     <None Include="NLog.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

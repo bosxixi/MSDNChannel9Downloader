@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 using NLog;
 using ShellProgressBar;
 using bosxixi.Extensions;
-
+using static bosxixi.Extensions.Extension;
 namespace MSDNChannel9Downloader
 {
     class Program
@@ -22,19 +22,12 @@ namespace MSDNChannel9Downloader
         private static Logger logger = LogManager.GetCurrentClassLogger();
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Tags/xamarin").GetAwaiter().GetResult();
-            //Console.WriteLine("complete");
+            LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/Visual-Studio-Getting-Started-Series").GetAwaiter().GetResult();
 
-            //foreach (var item in GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\xamarin.json"))
-            //{
-            //    if (item.BestQuality != null)
-            //    {
-            //        Console.WriteLine(item.BestQuality.FileUri);
-            //    }
-
-            //}
-            FileNameChanger(GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\xamarin.json"), @"C:\Users\bosxi\Downloads\xamarin");
+            //FileNameChanger(GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\Azure-Chinese-How-To-Video.json"), @"C:\Users\bosxi\Downloads\Azure-Chinese-How-To-Video");
 
 
 
@@ -50,13 +43,14 @@ namespace MSDNChannel9Downloader
         static void FileNameChanger(IEnumerable<VideoPage> videoPages, string path)
         {
             var files = videoPages.Where(c => c.BestQuality != null)
-                .Select(b => new KeyValuePair<string, MediaFileInfo>(b.Title.GetValidFileName(), b.BestQuality));
+                .Select(b => new KeyValuePair<string, MediaFileInfo>(b.Title.GetValidFileName(), b.BestQuality))
+                .OrderBy(c => c.Value.FileName);
             files.Foreach(c => {
-                var oldFileName = Path.Combine(path, c.Value.FileName);
-                var fileTypeName = Enum.GetName(typeof(MediaFileType), c.Value.Type);
+                var oldFileName = Path.Combine(path, c.Value.FileName).Trim();
+                var fileTypeName = Enum.GetName(typeof(MediaFileType), c.Value.Type).Trim();
                 var newFileName = Path.Combine(path, $"{c.Key.GetValidFileName()}.{c.Value.Suffix}");
                 //var newFileName = Path.Combine(path, $"{c.Key.GetValidFileName()}_{fileTypeName}.{c.Value.Suffix}");
-                Console.WriteLine($"{new FileInfo(oldFileName).Name} -> {new FileInfo(newFileName).Name}");
+                Console.WriteLine($"{new FileInfo(oldFileName).Name.PadRight(60)} -> {new FileInfo(newFileName).Name}");
             });
 
             prompt:
@@ -65,10 +59,19 @@ namespace MSDNChannel9Downloader
             if (input == "y")
             {
                 files.Foreach(c => {
-                    var oldFileName = Path.Combine(path, c.Value.FileName);
-                    var fileTypeName = Enum.GetName(typeof(MediaFileType), c.Value.Type);
-                    var newFileName = Path.Combine(path, $"{c.Key.GetValidFileName()}_{fileTypeName}.{c.Value.Suffix}");
-                    File.Move(oldFileName, newFileName);
+                    var oldFileName = Path.Combine(path, c.Value.FileName).Trim();
+                    var fileTypeName = Enum.GetName(typeof(MediaFileType), c.Value.Type).Trim();
+                    var newFileName = Path.Combine(path, $"{c.Key.GetValidFileName()}_.{c.Value.Suffix}");
+                    try
+                    {
+                        File.Move(oldFileName, newFileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine($"old : {oldFileName} | new : {newFileName}");
+                    }
+
                 });
             }
             else

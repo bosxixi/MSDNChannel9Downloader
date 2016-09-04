@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using bosxixi.Extensions;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

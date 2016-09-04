@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Net;
 using System.Threading;
+using bosxixi.Extensions;
+using System.Text;
 
 namespace MSDNChannel9Downloader
 {
@@ -52,6 +54,13 @@ namespace MSDNChannel9Downloader
 
             var tasks = series._cache.Select(c => c.Value);
             string[] htmls = await Task.WhenAll(tasks);
+
+            htmls = htmls.Select(c =>
+            {
+                byte[] bytes = Encoding.Default.GetBytes(c);
+                return Encoding.UTF8.GetString(bytes);
+            }).ToArray();
+
             Console.WriteLine("All page downloaded");
 
             var htmlDocs = htmls.Select(h => series.Parse(h));
@@ -125,7 +134,7 @@ namespace MSDNChannel9Downloader
                 File.Delete(path);
             }
 
-            File.WriteAllText(path, json);
+            File.WriteAllText(path, json, System.Text.Encoding.UTF8);
             Console.WriteLine("File Saved");
             SaveBestQualityUri();
         }
@@ -143,7 +152,7 @@ namespace MSDNChannel9Downloader
             }
 
             var uris = VideoPages.Where(c => c.BestQuality != null).Select(c => c.BestQuality.FileUri);
-            File.WriteAllLines(path, uris);
+            File.WriteAllLines(path, uris, System.Text.Encoding.UTF8);
             Console.WriteLine("File-Uri Saved");
         }
     }
