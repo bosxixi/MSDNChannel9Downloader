@@ -23,24 +23,24 @@ namespace MSDNChannel9Downloader
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.InputEncoding = System.Text.Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
+            ServicePointManager.DefaultConnectionLimit = 10;
+            //LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Browse/AllContent").GetAwaiter().GetResult();
+            //Console.WriteLine("complete, press enter to change file names.");
+            //FileNameChanger(GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\DevRadio.json"), @"C:\Users\bosxi\Downloads\DevRadio");
 
-            LoadVideoPagesToDiskAsync("https://channel9.msdn.com/Series/Visual-Studio-Getting-Started-Series").GetAwaiter().GetResult();
-
-            //FileNameChanger(GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\Azure-Chinese-How-To-Video.json"), @"C:\Users\bosxi\Downloads\Azure-Chinese-How-To-Video");
 
 
+            Console.WriteLine("please input Series or Tags Uri link? --example https://channel9.msdn.com/Tags/fsharp");
+            string uri = Console.ReadLine();
+            Console.WriteLine("Store to where path?     --example d:/foldername");
+            string path = Console.ReadLine();
 
-            //Console.WriteLine("please input Series or Tags Uri link? --example https://channel9.msdn.com/Tags/fsharp");
-            //string uri = Console.ReadLine();
-            //Console.WriteLine("Store to where path?     --example d:/foldername");
-            //string path = Console.ReadLine();
-
-            //DownloadAsync(uri, path).Wait();
+            DownloadAsync(uri, path).Wait();
             Console.ReadLine();
         }
 
-        static void FileNameChanger(IEnumerable<VideoPage> videoPages, string path)
+        static void FileNameChanger(IEnumerable<VideoInfo> videoPages, string path)
         {
             var files = videoPages.Where(c => c.BestQuality != null)
                 .Select(b => new KeyValuePair<string, MediaFileInfo>(b.Title.GetValidFileName(), b.BestQuality))
@@ -81,16 +81,15 @@ namespace MSDNChannel9Downloader
            
         }
 
-        static IEnumerable<VideoPage> GetVideoPagesFromDisk(string path)
+        static IEnumerable<VideoInfo> GetVideoPagesFromDisk(string path)
         {
             string enPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
             string file = File.ReadAllText(path);
-            return JsonConvert.DeserializeObject<IEnumerable<VideoPage>>(file);
+            return JsonConvert.DeserializeObject<IEnumerable<VideoInfo>>(file);
         }
 
         static async Task DownloadVideoToDiskAsync()
         {
-            ServicePointManager.DefaultConnectionLimit = 64;
             List<Task> TaskList = new List<Task>();
             var vs = GetVideoPagesFromDisk(@"C:\Users\bosxi\Videos\fsharp.json");
             foreach (var item in vs)

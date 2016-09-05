@@ -13,14 +13,14 @@ namespace MSDNChannel9Downloader
     public class Downloader
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private VideoPage _videoPage;
+        private VideoInfo _videoPage;
         private ProgressBar _bar;
         public int CurrentPercent { get; set; }
         private string folder { get; set; }
 
         public MediaFileType? TypeToDownload { get; }
 
-        public Downloader(VideoPage videoPage, string folder, MediaFileType? typeToDownload = null)
+        public Downloader(VideoInfo videoPage, string folder, MediaFileType? typeToDownload = null)
         {
             if (String.IsNullOrEmpty(folder))
             {

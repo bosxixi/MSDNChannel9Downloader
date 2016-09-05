@@ -12,12 +12,18 @@ using System.Threading.Tasks;
 
 namespace MSDNChannel9Downloader
 {
-    public class VideoPage
+    public class VideoInfo
     {
         public string Uri { get; set; }
+        public string BreadcrumbsFirst { get; set; }
+        public string BreadcrumbsLast { get; set; }
         public string Title { get; set; }
+        public DateTimeOffset PostedDate { get; set; }
+        public ICollection<Niners> Author { get; set; }
+        public Rating Rating { get; set; }
+        public int Views { get; set; }
 
-        private static object syncRoot = new Object();
+        private static object syncRoot = new object();
 
         public List<MediaFileInfo> MediaFileInfos { get; set; }
 

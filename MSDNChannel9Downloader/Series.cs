@@ -10,6 +10,7 @@ using System.Net;
 using System.Threading;
 using bosxixi.Extensions;
 using System.Text;
+using bosxixi.ProgressBar;
 
 namespace MSDNChannel9Downloader
 {
@@ -30,7 +31,7 @@ namespace MSDNChannel9Downloader
             Name = uri.AbsolutePath.Split('/')[2];
             SeriesLink = seriesLink;
 
-            VideoPages = new List<VideoPage>();
+            VideoPages = new List<VideoInfo>();
             _cache = new Dictionary<string, Task<string>>();
             _uris = new Dictionary<int, string>();
             Console.WriteLine("Starting...");
@@ -38,7 +39,7 @@ namespace MSDNChannel9Downloader
         public string Name { get; private set; }
         public string SeriesLink { get; private set; }
         public string pageParmName { get; private set; } = "page";
-        public List<VideoPage> VideoPages { get; private set; }
+        public List<VideoInfo> VideoPages { get; private set; }
         private readonly Dictionary<string, Task<string>> _cache;
         private Dictionary<int, string> _uris { get; set; }
 
@@ -76,8 +77,21 @@ namespace MSDNChannel9Downloader
             Task<string> downloadTask;
             if (_cache.TryGetValue(uri, out downloadTask)) return downloadTask;
             var client = new WebClient();
+            var bar = new ProgressBar(100);
+            int currentPercent = 0;
             downloadTask = client.DownloadStringTaskAsync(uri);
-            client.DownloadStringCompleted += (sender, args) => { Console.WriteLine($"Page {page} download"); };
+            client.DownloadProgressChanged += (sender, args) => {
+                if (currentPercent < args.ProgressPercentage)
+                {
+                    currentPercent = args.ProgressPercentage;
+                    bar.Tick(args.ProgressPercentage, $"Page {page} downloading");
+                }
+            };
+            client.DownloadStringCompleted += (sender, args) => {
+                Console.WriteLine($"Page {page} download");
+                client.Dispose();
+            };
+            //client.Disposed += (sender, args) => { Console.WriteLine($"Page {page} Disposed !!"); };
             return _cache[uri] = downloadTask;
         }
 
@@ -88,11 +102,11 @@ namespace MSDNChannel9Downloader
             return htmlDoc;
         }
 
-        private IEnumerable<VideoPage> GetPageVideos(HtmlDocument htmlDocument)
+        private IEnumerable<VideoInfo> GetPageVideos(HtmlDocument htmlDocument)
         {
             Uri uri = new Uri(SeriesLink);
             return htmlDocument.DocumentNode.ChildNodes.QuerySelectorAll("ul.entries li a.title").Select(c =>
-            new VideoPage
+            new VideoInfo
             {
                 Title = c.InnerText.Replace("&#160;", " "),
                 Uri = $"{uri.Scheme}://{uri.Host}{c.Attributes["href"].Value}"
@@ -124,7 +138,8 @@ namespace MSDNChannel9Downloader
         {
             if (String.IsNullOrEmpty(path))
             {
-                path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}.json";
+                path = $@"Z:\download\{Name}.json";
+                //path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}.json";
             }
 
             string json = JsonConvert.SerializeObject(this.VideoPages, Formatting.Indented);
@@ -136,16 +151,11 @@ namespace MSDNChannel9Downloader
 
             File.WriteAllText(path, json, System.Text.Encoding.UTF8);
             Console.WriteLine("File Saved");
-            SaveBestQualityUri();
+            SaveBestQualityUri(path);
         }
 
-        public void SaveBestQualityUri(string path = null)
+        public void SaveBestQualityUri(string path)
         {
-            if (String.IsNullOrEmpty(path))
-            {
-                path = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}\\{Name}-Uri.json";
-            }
-
             if (File.Exists(path))
             {
                 File.Delete(path);
